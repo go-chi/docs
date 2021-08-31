@@ -199,7 +199,6 @@ section.cover {
   }
   
   /****** Sidebar Toggle ******/
-@media screen and (min-width: 800px) {
   .sidebar-toggle {
     cursor: pointer;
   }
@@ -252,10 +251,30 @@ section.cover {
   }
   .sidebar-toggle .sidebar-toggle-button:hover {
     opacity: 1;
-  } 
-}
+  }
+  
+  @media screen and (max-width: 768px) {
+    body .sidebar-toggle {
+      left: 1rem;
+    }
+  
+    body.close .sidebar-toggle {
+      left: calc(300px + 1.5rem);
+    }
 
- /****** COPY TO CLIPBOARD ******/
+    #docsify-darklight-theme {
+      position: absolute;
+      top: 35px;
+      right: 3px;
+      left: auto;
+    }
+    .github-corner svg {
+      height: 60px;
+      width: 60px;
+    }
+  }
+
+  /****** COPY TO CLIPBOARD ******/
 .docsify-copy-code-button {
     font-size: 0.7em !important;
 }
