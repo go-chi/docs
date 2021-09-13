@@ -277,6 +277,171 @@ func main(){
 }
 ```
 
+## Oauth 2.0
+
+### Authorization Server
+
+We can make an Authorization Server, which generates tokens for three scopes
+
+1. username & password
+2. clientID & Secret
+3. RefreshTokenGrant
+
+Example:
+
+```go
+package main
+
+import(
+    "errors"
+    "net/http"
+    "time"
+
+    "github.com/go-chi/chi/v5"
+    "github.com/go-chi/chi/v5/middleware"
+    "github.com/go-chi/cors"
+    "github.com/go-chi/oauth"
+)
+
+func main() {
+  r := chi.NewRouter()
+  r.Use(middleware.Logger)
+  r.Use(middleware.Recoverer)
+  r.Use(cors.Handler(cors.Options{
+    AllowedOrigins:   []string{"*"},
+    AllowedMethods:   []string{"GET", "PUT", "POST", "DELETE", "HEAD", "OPTION"},
+    AllowedHeaders:   []string{"User-Agent", "Content-Type", "Accept", "Accept-Encoding", "Accept-Language", "Cache-Control", "Connection", "DNT", "Host", "Origin", "Pragma", "Referer"},
+    ExposedHeaders:   []string{"Link"},
+    AllowCredentials: true,
+    MaxAge:           300, // Maximum value not ignored by any of major browsers
+  }))
+  registerAPI(r)
+  _ = http.ListenAndServe(":8080", r)
+}
+
+func registerAPI(r *chi.Mux) {
+  s := oauth.NewBearerServer(
+    "mySecretKey-10101",
+    time.Second*120,
+    &TestUserVerifier{},
+    nil)
+  r.Post("/token", s.UserCredentials)
+  r.Post("/auth", s.ClientCredentials)
+}
+```
+
+
+
+#### Generate Token using username & password
+```
+    POST http://localhost:3000/token
+    User-Agent: Fiddler
+    Host: localhost:3000
+    Content-Length: 50
+    Content-Type: application/x-www-form-urlencoded
+
+    grant_type=password&username=user01&password=12345
+```
+#### Generate Token using clientID & secret
+
+```
+    POST http://localhost:3000/auth
+    User-Agent: Fiddler
+    Host: localhost:3000
+    Content-Length: 66
+    Content-Type: application/x-www-form-urlencoded
+
+    grant_type=client_credentials&client_id=abcdef&client_secret=12345
+```
+
+#### RefreshTokenGrant Token
+```
+    POST http://localhost:3000/token
+    User-Agent: Fiddler
+    Host: localhost:3000
+    Content-Length: 50
+    Content-Type: application/x-www-form-urlencoded
+
+    grant_type=refresh_token&refresh_token={the refresh_token obtained in the previous response}
+
+```
+Refer [Example](https://github.com/go-chi/oauth/blob/master/example/authserver/main.go) For the full Example...
+
+
+### Resource Server
+
+Here we can implement oauth2 authentication and verification
+
+Example:
+```go
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+
+	"github.com/go-chi/oauth"
+)
+
+func main() {
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "PUT", "POST", "DELETE", "HEAD", "OPTION"},
+		AllowedHeaders:   []string{"User-Agent", "Content-Type", "Accept", "Accept-Encoding", "Accept-Language", "Cache-Control", "Connection", "DNT", "Host", "Origin", "Pragma", "Referer"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
+	registerAPI(r)
+	_ = http.ListenAndServe(":8081", r)
+}
+
+func registerAPI(r *chi.Mux) {
+	r.Route("/", func(r chi.Router) {
+		// use the Bearer Authentication middleware
+		r.Use(oauth.Authorize("mySecretKey-10101", nil))
+		r.Get("/customers", GetCustomers)
+		r.Get("/customers/{id}/orders", GetOrders)
+	})
+}
+```
+
+```
+   Resource Server Example
+
+	Get Customers
+
+		GET http://localhost:3200/customers
+		User-Agent: Fiddler
+		Host: localhost:3200
+		Content-Length: 0
+		Content-Type: application/json
+		Authorization: Bearer {access_token}
+
+	Get Orders
+
+		GET http://localhost:3200/customers/12345/orders
+		User-Agent: Fiddler
+		Host: localhost:3200
+		Content-Length: 0
+		Content-Type: application/json
+		Authorization: Bearer {access_token}
+
+	{access_token} is produced by the Authorization Server response (see example /test/authserver).
+```
+
+
+Refer [Example](https://github.com/go-chi/oauth/blob/master/example/resourceserver/main.go) For the full Example...
+
+
 ## Profiler
 
 Profiler is a convenient subrouter used for mounting net/http/pprof. ie.
@@ -404,16 +569,16 @@ r := chi.NewRouter()
 
 r.Use(middleware.RouteHeaders().
   Route("Origin", "https://app.skyweaver.net", cors.Handler(cors.Options{
-	   AllowedOrigins:   []string{"https://api.skyweaver.net"},
-	   AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	   AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-	   AllowCredentials: true, // <----------<<< allow credentials
+     AllowedOrigins:   []string{"https://api.skyweaver.net"},
+     AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+     AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+     AllowCredentials: true, // <----------<<< allow credentials
   })).
   Route("Origin", "*", cors.Handler(cors.Options{
-	   AllowedOrigins:   []string{"*"},
-	   AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	   AllowedHeaders:   []string{"Accept", "Content-Type"},
-	   AllowCredentials: false, // <----------<<< do not allow credentials
+     AllowedOrigins:   []string{"*"},
+     AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+     AllowedHeaders:   []string{"Accept", "Content-Type"},
+     AllowCredentials: false, // <----------<<< do not allow credentials
   })).
   Handler)
 ```
@@ -492,18 +657,18 @@ signal will be just ignored.
 ie. a route/handler may look like:
 ```go
  r.Get("/long", func(w http.ResponseWriter, r *http.Request) {
-	 ctx := r.Context()
-	 processTime := time.Duration(rand.Intn(4)+1) * time.Second
+   ctx := r.Context()
+   processTime := time.Duration(rand.Intn(4)+1) * time.Second
 
-	 select {
-	 case <-ctx.Done():
-	 	return
+   select {
+   case <-ctx.Done():
+     return
 
-	 case <-time.After(processTime):
-	 	 // The above channel simulates some hard work.
-	 }
+   case <-time.After(processTime):
+      // The above channel simulates some hard work.
+   }
 
-	 w.Write([]byte("done"))
+   w.Write([]byte("done"))
  })
 ```
 
@@ -574,58 +739,58 @@ See the full [example](https://github.com/go-chi/jwtauth/blob/master/_example/ma
 package main
 
 import (
-	"fmt"
-	"net/http"
+  "fmt"
+  "net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/jwtauth/v5"
+  "github.com/go-chi/chi/v5"
+  "github.com/go-chi/jwtauth/v5"
 )
 
 var tokenAuth *jwtauth.JWTAuth
 
 func init() {
-	tokenAuth = jwtauth.New("HS256", []byte("secret"), nil) // replace with secret key
+  tokenAuth = jwtauth.New("HS256", []byte("secret"), nil) // replace with secret key
 
-	// For debugging/example purposes, we generate and print
-	// a sample jwt token with claims `user_id:123` here:
-	_, tokenString, _ := tokenAuth.Encode(map[string]interface{}{"user_id": 123})
-	fmt.Printf("DEBUG: a sample jwt is %s\n\n", tokenString)
+  // For debugging/example purposes, we generate and print
+  // a sample jwt token with claims `user_id:123` here:
+  _, tokenString, _ := tokenAuth.Encode(map[string]interface{}{"user_id": 123})
+  fmt.Printf("DEBUG: a sample jwt is %s\n\n", tokenString)
 }
 
 func main() {
-	addr := ":3333"
-	fmt.Printf("Starting server on %v\n", addr)
-	http.ListenAndServe(addr, router())
+  addr := ":3333"
+  fmt.Printf("Starting server on %v\n", addr)
+  http.ListenAndServe(addr, router())
 }
 
 func router() http.Handler {
-	r := chi.NewRouter()
+  r := chi.NewRouter()
 
-	// Protected routes
-	r.Group(func(r chi.Router) {
-		// Seek, verify and validate JWT tokens
-		r.Use(jwtauth.Verifier(tokenAuth))
+  // Protected routes
+  r.Group(func(r chi.Router) {
+    // Seek, verify and validate JWT tokens
+    r.Use(jwtauth.Verifier(tokenAuth))
 
-		// Handle valid / invalid tokens. In this example, we use
-		// the provided authenticator middleware, but you can write your
-		// own very easily, look at the Authenticator method in jwtauth.go
-		// and tweak it, its not scary.
-		r.Use(jwtauth.Authenticator)
+    // Handle valid / invalid tokens. In this example, we use
+    // the provided authenticator middleware, but you can write your
+    // own very easily, look at the Authenticator method in jwtauth.go
+    // and tweak it, its not scary.
+    r.Use(jwtauth.Authenticator)
 
-		r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
-			_, claims, _ := jwtauth.FromContext(r.Context())
-			w.Write([]byte(fmt.Sprintf("protected area. hi %v", claims["user_id"])))
-		})
-	})
+    r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
+      _, claims, _ := jwtauth.FromContext(r.Context())
+      w.Write([]byte(fmt.Sprintf("protected area. hi %v", claims["user_id"])))
+    })
+  })
 
-	// Public routes
-	r.Group(func(r chi.Router) {
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("welcome anonymous"))
-		})
-	})
+  // Public routes
+  r.Group(func(r chi.Router) {
+    r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+      w.Write([]byte("welcome anonymous"))
+    })
+  })
 
-	return r
+  return r
 }
 ```
 
