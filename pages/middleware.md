@@ -84,7 +84,7 @@ import (
 
 func main(){
   r := chi.NewRouter()
-  r.Use(middleware.AllowContentEncoding("application/json","text/xml"))
+  r.Use(middleware.AllowContentType("application/json","text/xml"))
   r.Post("/", func(w http.ResponseWriter, r *http.Request) {})
 }
 ```
