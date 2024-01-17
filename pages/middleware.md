@@ -641,7 +641,7 @@ import (
 
 func main(){
     r := chi.NewRouter()
-    r.Use(ThrottleBacklog(10, 50, time.Second*10))
+    r.Use(middleware.ThrottleBacklog(10, 50, time.Second*10))
     r.Post("/", func(w http.ResponseWriter, r *http.Request) {})
 }
 ```
