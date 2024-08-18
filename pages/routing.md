@@ -48,7 +48,7 @@ r.Get("/articles/{date}-{slug}", getArticle)
 func getArticle(w http.ResponseWriter, r *http.Request) {
   dateParam := chi.URLParam(r, "date")
   slugParam := chi.URLParam(r, "slug")
-  article, err := database.GetArticle(date, slug)
+  article, err := database.GetArticle(dateParam, slugParam)
 
   if err != nil {
     w.WriteHeader(422)
