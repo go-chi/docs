@@ -607,7 +607,7 @@ func main(){
 
 Throttle is a middleware that limits number of currently processed requests
 at a time across all users. Note: Throttle is not a rate-limiter per user,
-instead it just puts a ceiling on the number of currentl in-flight requests
+instead it just puts a ceiling on the number of currently in-flight requests
 being processed from the point from where the Throttle middleware is mounted.
 
 Throttle has a BacklogTimeout of 60 seconds by default
