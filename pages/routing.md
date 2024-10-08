@@ -62,7 +62,7 @@ func getArticle(w http.ResponseWriter, r *http.Request) {
     return
   }
   w.Write([]byte(article.Text()))
-})
+}
 ```
 
 as you can see above, the url parameters are defined using the curly brackets `{}` with the parameter name in between, as `{date}` and `{slug}`.
