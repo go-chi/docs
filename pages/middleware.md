@@ -108,6 +108,50 @@ func main(){
 }
 ```
 
+## ClientIP
+
+ClientIP is a family of middlewares that resolve the real client IP address
+based on how your service is deployed, and make it available via the request
+context. It is a replacement for the former RealIP middleware, which was
+vulnerable to IP spoofing and has been removed.
+
+Unlike RealIP, ClientIP never modifies `r.RemoteAddr`. Instead, it requires you
+to explicitly choose a trusted source for the client IP, and stores the result
+in the request context.
+
+Choose **exactly one** of the following middlewares based on your infrastructure:
+
+- `ClientIPFromHeader(trustedHeader)` - trust a single header set by your proxy or CDN
+- `ClientIPFromXFF(trustedIPPrefixes...)` - parse `X-Forwarded-For`, trusting the given proxy CIDR ranges
+- `ClientIPFromXFFTrustedProxies(numTrustedProxies)` - parse `X-Forwarded-For`, trusting a fixed number of proxy hops
+- `ClientIPFromRemoteAddr` - no proxy in front; use the connection's remote address
+
+See the [🌐 Client IP](/pages/client_ip.md) page for detailed guidance on
+choosing the right middleware for your deployment, security considerations,
+and migration from RealIP.
+
+Usage
+
+```go
+import (
+  "github.com/go-chi/chi/v5/middleware"
+)
+
+func main(){
+  r := chi.NewRouter()
+
+  // Choose ONE, based on your deployment, e.g. behind Cloudflare:
+  r.Use(middleware.ClientIPFromHeader("CF-Connecting-IP"))
+
+  r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+    // Retrieve the client IP from the request context.
+    clientIP := middleware.GetClientIP(r.Context())
+
+    w.Write([]byte(clientIP))
+  })
+}
+```
+
 ## Compress
 
 Compress is a middleware that compresses response body of a given content types to a data format based on Accept-Encoding request header. It uses a given compression level.
@@ -460,40 +504,6 @@ import (
 }
 ```
 Now you can request @ /debug for pprof profiles
-
-## RealIP
-
-RealIP is a middleware that sets a http.Request's RemoteAddr to the results
-of parsing either the X-Real-IP header or the X-Forwarded-For header (in that
-order).
-
-This middleware should be inserted fairly early in the middleware stack to
-ensure that subsequent layers (e.g., request loggers) which examine the
-RemoteAddr will see the intended value.
-
-You should only use this middleware if you can trust the headers passed to
-you (in particular, the two headers this middleware uses), for example
-because you have placed a reverse proxy like HAProxy or nginx in front of
-chi. If your reverse proxies are configured to pass along arbitrary header
-values from the client, or if you use this middleware without a reverse
-proxy, malicious clients will be able to cause harm (or, depending on
-how you're using RemoteAddr, vulnerable to an attack of some sort).
-
-Usage
-
-
-```go
-import (
-  "github.com/go-chi/chi/v5/middleware"
-)
-
- func main(){
-   r := chi.NewRouter()
-   // ..middlewares
-   r.Use(middleware.RealIP)
-   // ..routes
-}
-```
 
 ## Recoverer
 

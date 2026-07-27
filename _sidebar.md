@@ -11,6 +11,7 @@
 - [⚡ Getting Started](pages/getting_started.md)
 - [🔌 Routing](pages/routing.md)
 - [🧬 Middleware](pages/middleware.md)
+- [🌐 Client IP](pages/client_ip.md)
 - [🧪 Testing](pages/testing.md)
 - [🍳 Examples](https://github.com/go-chi/chi/tree/master/_examples)
 - [⚖️ License](https://github.com/go-chi/chi/blob/master/LICENSE)
