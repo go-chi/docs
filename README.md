@@ -38,6 +38,20 @@ and [docgen](https://github.com/go-chi/docgen). We hope you enjoy it too!
 See [examples](https://github.com/go-chi/chi/blob/master/_examples/) for a variety of examples.
 
 
+## Contributing to these docs <!-- {docsify-ignore} -->
+
+This documentation is a static [docsify](https://docsify.js.org) site — there
+is no build step. To preview your changes locally, serve this directory with
+the docsify CLI (requires [Node.js](https://nodejs.org)):
+
+```bash
+npx docsify-cli serve .
+```
+
+Then open http://localhost:3000. Pages live-reload as you edit the markdown
+files. Note that docsify itself is loaded from a CDN, so an internet
+connection is required even when serving locally.
+
 ## License <!-- {docsify-ignore} -->
 
 Copyright (c) 2015-present [Peter Kieltyka](https://github.com/pkieltyka)

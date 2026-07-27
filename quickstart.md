@@ -68,10 +68,12 @@ func main(){
 
 	r.Use(middleware.RequestID)
 	
-	// RealIP is a middleware that sets a http.Request's RemoteAddr to the results
-	// of parsing either the X-Real-IP header or the X-Forwarded-For header (in that
-	// order).
-	r.Use(middleware.RealIP)
+	// ClientIP middlewares resolve the real client IP address and make it
+	// available via middleware.GetClientIP(r.Context()). Choose the one that
+	// matches your deployment, e.g. ClientIPFromHeader("CF-Connecting-IP")
+	// behind Cloudflare, or ClientIPFromRemoteAddr when facing the internet
+	// directly (no proxy). See the Client IP docs page for how to choose.
+	r.Use(middleware.ClientIPFromRemoteAddr)
 	r.Use(middleware.Logger)
 
 	// Recoverer is a middleware that recovers from panics, logs the panic (and a
@@ -393,10 +395,12 @@ func main() {
 
 	r.Use(middleware.RequestID)
 
-	// RealIP is a middleware that sets a http.Request's RemoteAddr to the results
-	// of parsing either the X-Real-IP header or the X-Forwarded-For header (in that
-	// order).
-	r.Use(middleware.RealIP)
+	// ClientIP middlewares resolve the real client IP address and make it
+	// available via middleware.GetClientIP(r.Context()). Choose the one that
+	// matches your deployment, e.g. ClientIPFromHeader("CF-Connecting-IP")
+	// behind Cloudflare, or ClientIPFromRemoteAddr when facing the internet
+	// directly (no proxy). See the Client IP docs page for how to choose.
+	r.Use(middleware.ClientIPFromRemoteAddr)
 	r.Use(middleware.Logger)
 
 	// Recoverer is a middleware that recovers from panics, logs the panic (and a
