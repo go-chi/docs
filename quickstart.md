@@ -8,7 +8,7 @@ This tutorial is only to show you how an api would look with chi.
 ## Installation
 
 ```sh
-go get -u github.com/go-chi/chi/v5
+go get github.com/go-chi/chi/v5
 ```
 
 
